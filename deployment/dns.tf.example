@@ -1,0 +1,44 @@
+resource "aws_route53_zone" "main" {
+  name = "testbasic.xyz"
+}
+
+variable "geo_location_records" {
+  type = list(object({
+    name      = string,
+    record    = string,
+    ttl       = number,
+    sid       = string,
+    continent = optional(string),
+    country   = optional(string),
+  }))
+  default = [
+    // Some information on automatically fetching the IP from ECS: https://github.com/hashicorp/terraform-provider-aws/issues/3444
+    // Europe (Azure)
+    { name = "api.testbasic.xyz", record = "1.2.3.4", ttl = 300, sid = "Europe->Europe", continent = "EU" },
+    { name = "api.testbasic.xyz", record = "1.2.3.4", ttl = 300, sid = "Africa->Europe", continent = "AF" },
+    // India (AWS)
+    { name = "api.testbasic.xyz", record = "1.2.3.4", ttl = 300, sid = "Asia->India", continent = "AS" },
+    { name = "api.testbasic.xyz", record = "1.2.3.4", ttl = 300, sid = "Oceania->India", continent = "OC" },
+    // Default (HarperDB Cloud, North/South America, others)
+    { name = "api.testbasic.xyz", record = "1.2.3.4", ttl = 300, sid = "Default (Catchall)", country = "*" }
+  ]
+}
+
+resource "aws_route53_record" "Geolocation" {
+  count = length(var.geo_location_records)
+
+  type           = "A"
+  zone_id        = aws_route53_zone.main.zone_id
+  name           = var.geo_location_records[count.index]["name"]
+  ttl            = var.geo_location_records[count.index]["ttl"]
+  set_identifier = var.geo_location_records[count.index]["sid"]
+
+  geolocation_routing_policy {
+    continent    = try(var.geo_location_records[count.index]["continent"], null)
+    country      = try(var.geo_location_records[count.index]["country"], null)
+  }
+
+  records        = compact(
+    split(",", var.geo_location_records[count.index]["record"]),
+  )
+}
