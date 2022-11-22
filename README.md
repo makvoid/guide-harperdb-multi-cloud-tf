@@ -1,5 +1,7 @@
 # HarperDB Multi-Cloud Terraform Deployment
 
+[Article Link](https://medium.com/geekculture/global-multi-cloud-terraform-deployment-for-low-latency-applications-worldwide-b02c65c859ca)
+
 ## Introduction
 
 This repository contains the code and Terraform files required for the Multi-Cloud deployment project I wrote about in this article over on Medium. An ECS container is spun up in India and an Azure Container Instance is created in France. We also use Route53 to setup a DNS record to route the request to the User's closest server.
